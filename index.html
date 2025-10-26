@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gold Price Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* For screen readers */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+  <script>
+    // On page load, set theme to avoid FOUC
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300">
+
+  <!-- Screen Reader Announcer -->
+  <div id="aria-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Skeleton Loader -->
+  <div id="skeleton-loader" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <main class="w-full max-w-4xl mx-auto space-y-8">
+      <header class="text-center space-y-2">
+        <div class="flex items-center justify-center gap-4">
+          <div class="h-12 w-12 text-slate-300 dark:text-slate-700">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M2 7.5516C2 7.02521 2.42857 6.59663 2.95496 6.59663H21.045C21.5714 6.59663 22 7.02521 22 7.5516V16.4484C22 16.9748 21.5714 17.4034 21.045 17.4034H2.95496C2.42857 17.4034 2 16.9748 2 16.4484V7.5516Z"
+                stroke="currentColor" stroke-width="1.5"></path>
+              <path d="M4 8.86873L5.33333 7.5354H18.6667L20 8.86873V15.1313L18.6667 16.4646H5.33333L4 15.1313V8.86873Z"
+                fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-12 w-80"></div>
+        </div>
+        <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-7 w-64 mx-auto"></div>
+        <div class="pt-4">
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-10 w-48 mx-auto"></div>
+        </div>
+      </header>
+      <section
+        class="bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 md:p-8">
+        <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 md:gap-6">
+          <div class="w-48 text-left">
+            <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-8 w-full mb-2"></div>
+            <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-5 w-3/4"></div>
+          </div>
+          <div class="w-64">
+            <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-12 w-full mb-2"></div>
+            <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-6 w-3/4 ml-auto"></div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-48 w-full"></div>
+      </section>
+      <section>
+        <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-8 w-56 mb-4"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-28 w-full"></div>
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-28 w-full"></div>
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-28 w-full"></div>
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-28 w-full"></div>
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-28 w-full"></div>
+          <div class="bg-slate-200 dark:bg-slate-700/50 rounded-md animate-pulse h-28 w-full"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- App Content -->
+  <div id="app-content"
+    class="min-h-screen flex flex-col items-center justify-center p-4 selection:bg-amber-500 selection:text-slate-900 hidden">
+    <main class="w-full max-w-4xl mx-auto space-y-8 relative">
+      <button id="theme-toggle"
+        class="absolute top-4 right-4 p-2 rounded-full bg-slate-200/50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+        aria-label="Switch to dark mode">
+        <span id="theme-icon-light" class="hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="h-6 w-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z">
+            </path>
+          </svg>
+        </span>
+        <span id="theme-icon-dark" class="hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="h-6 w-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z">
+            </path>
+          </svg>
+        </span>
+      </button>
+
+      <header class="text-center space-y-2 pt-8">
+        <div class="flex items-center justify-center gap-4">
+          <div class="h-12 w-12 text-amber-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M2 7.5516C2 7.02521 2.42857 6.59663 2.95496 6.59663H21.045C21.5714 6.59663 22 7.02521 22 7.5516V16.4484C22 16.9748 21.5714 17.4034 21.045 17.4034H2.95496C2.42857 17.4034 2 16.9748 2 16.4484V7.5516Z"
+                stroke="currentColor" stroke-width="1.5"></path>
+              <path d="M4 8.86873L5.33333 7.5354H18.6667L20 8.86873V15.1313L18.6667 16.4646H5.33333L4 15.1313V8.86873Z"
+                fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-amber-400">
+            Gold Price Tracker
+          </h1>
+        </div>
+        <p class="text-lg text-slate-600 dark:text-slate-400">
+          Live XAU/USD Spot Price & Conversions
+        </p>
+        <div id="market-status" class="text-center mt-4">
+          <div class="flex items-center justify-center gap-2 text-sm">
+            <span class="relative flex h-3 w-3">
+              <span id="market-ping-indicator"
+                class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span id="market-dot-indicator" class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <span id="market-text-indicator" class="text-red-500 dark:text-red-400">
+              Market is Closed
+            </span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-500 mt-1">
+            Trading Hours: Monday 3:30 AM — Saturday 2:30 AM (IST)
+          </p>
+        </div>
+      </header>
+
+      <div id="error-banner"
+        class="hidden bg-red-100 border border-red-300 text-red-800 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300 px-4 py-2 rounded-lg text-center"
+        role="alert">
+      </div>
+
+      <div id="initial-error" class="hidden min-h-screen flex flex-col items-center justify-center p-4 text-center">
+        <h2 class="text-2xl text-red-600 dark:text-red-500 font-bold">Failed to Load Initial Data</h2>
+        <p class="mt-2 text-slate-600 dark:text-slate-400 max-w-md">Could not fetch initial prices. Please check your
+          internet connection and try refreshing the page.</p>
+      </div>
+
+      <section
+        class="bg-white/80 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-lg dark:shadow-2xl dark:shadow-slate-950/50 border border-slate-200 dark:border-slate-700 p-6 md:p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-2xl hover:shadow-amber-500/10 dark:hover:shadow-amber-500/20 hover:border-amber-300 dark:hover:border-amber-400/50">
+        <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 md:gap-6">
+          <div class="text-center md:text-left">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">XAU/USD</h2>
+            <p class="text-slate-600 dark:text-slate-400">Price per Troy Ounce</p>
+          </div>
+          <div id="price-display-container" class="flex flex-col items-center md:items-end">
+            <div class="flex items-center gap-3">
+              <div id="price-change-icon-container" class="hidden sm:flex items-center justify-center w-8 h-8"></div>
+              <div id="price-flash-container-usd" class="transition-colors duration-300 text-slate-900 dark:text-white">
+                <p id="price-usd" class="text-4xl md:text-5xl font-black tracking-tighter">
+                  $0.00
+                </p>
+              </div>
+            </div>
+            <p id="price-inr"
+              class="text-xl font-medium tracking-tight mt-1 transition-colors duration-300 text-slate-600 dark:text-slate-400">
+              ₹0.00
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="chart-container"
+        class="w-full bg-white dark:bg-slate-800/50 backdrop-blur-sm p-4 rounded-2xl shadow-lg dark:shadow-lg border border-slate-200 dark:border-slate-700 relative cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-2xl hover:shadow-amber-500/10 dark:hover:shadow-amber-500/20 hover:border-amber-300 dark:hover:border-amber-400/50">
+        <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2">Price History (Last 30 Updates)</h3>
+        <div class="relative">
+          <svg id="price-chart-svg" viewBox="0 0 300 100" class="w-full h-auto hidden"
+            preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path id="chart-area" d="M 5,100 L 5,100 295,100 z" fill="url(#areaGradient)" />
+            <polyline id="chart-line" class="stroke-amber-500" fill="none" stroke-width="1.5" points=""
+              stroke-linecap="round" stroke-linejoin="round" />
+            <g id="chart-tooltip-elements" class="hidden">
+              <line id="tooltip-line" class="stroke-amber-500" x1="0" y1="5" x2="0" y2="95" stroke-width="1"
+                stroke-dasharray="3,3" />
+              <circle id="tooltip-circle" class="fill-amber-500 stroke-white" cx="0" cy="0" r="3" stroke-width="1.5" />
+            </g>
+          </svg>
+          <div id="chart-placeholder" class="absolute inset-0 flex items-center justify-center">
+            <p class="text-slate-500 dark:text-slate-400">Awaiting data...</p>
+          </div>
+          <div id="chart-tooltip"
+            class="hidden absolute p-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm text-slate-800 dark:text-white text-xs rounded-md shadow-lg pointer-events-none border border-slate-200 dark:border-slate-600 space-y-0.5">
+            <div id="tooltip-time" class="text-slate-500 dark:text-slate-400"></div>
+            <div id="tooltip-price-usd" class="font-bold"></div>
+            <div id="tooltip-price-inr" class="text-slate-600 dark:text-slate-300"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="conversion-section">
+        <h3 class="text-xl font-bold text-amber-400 text-center md:text-left mb-4">
+          Weight Conversions
+        </h3>
+        <div id="conversion-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
+        </div>
+      </section>
+
+      <footer class="text-center text-slate-600 dark:text-slate-500 text-sm pt-4">
+        <p>Base Unit: 1 Troy Ounce ≈ 31.1035 grams</p>
+        <p id="inr-rate-footer" class="transition-colors duration-300 text-slate-700 dark:text-slate-400">
+          USD/INR Exchange Rate: ₹0.00
+        </p>
+        <p id="last-updated-footer">Last Updated: --:--:-- --</p>
+        <p class="mt-2">Disclaimer: Currency data from frankfurter.app, Gold price from goldprice.org. Prices may be
+          delayed.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- Constants ---
+      const TROY_OUNCE_IN_GRAMS = 31.1035;
+      const API_FETCH_INTERVAL_MS = 30000;
+      const CURRENCY_API_URL = 'https://api.frankfurter.app/latest?from=USD&to=INR';
+      const GOLD_API_URL = 'https://data-asg.goldprice.org/dbXRates/USD';
+
+      // --- State ---
+      let state = {
+        xauUsdPrice: null,
+        usdToInrRate: null,
+        priceHistory: [], // Max 30 entries of { time: Date, price: number }
+        lastUpdated: null,
+        errors: {
+          gold: null,
+          currency: null,
+        },
+        theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+      };
+
+      // --- DOM Elements ---
+      const ELS = {
+        skeletonLoader: document.getElementById('skeleton-loader'),
+        appContent: document.getElementById('app-content'),
+        initialError: document.getElementById('initial-error'),
+        errorBanner: document.getElementById('error-banner'),
+        priceUsd: document.getElementById('price-usd'),
+        priceInr: document.getElementById('price-inr'),
+        priceFlashContainerUsd: document.getElementById('price-flash-container-usd'),
+        priceChangeIconContainer: document.getElementById('price-change-icon-container'),
+        ariaAnnouncer: document.getElementById('aria-announcer'),
+        marketStatus: {
+          ping: document.getElementById('market-ping-indicator'),
+          dot: document.getElementById('market-dot-indicator'),
+          text: document.getElementById('market-text-indicator'),
+        },
+        chart: {
+          container: document.getElementById('chart-container'),
+          svg: document.getElementById('price-chart-svg'),
+          line: document.getElementById('chart-line'),
+          area: document.getElementById('chart-area'),
+          tooltip: document.getElementById('chart-tooltip'),
+          tooltipElements: document.getElementById('chart-tooltip-elements'),
+          tooltipLine: document.getElementById('tooltip-line'),
+          tooltipCircle: document.getElementById('tooltip-circle'),
+          tooltipTime: document.getElementById('tooltip-time'),
+          tooltipPriceUsd: document.getElementById('tooltip-price-usd'),
+          tooltipPriceInr: document.getElementById('tooltip-price-inr'),
+          placeholder: document.getElementById('chart-placeholder'),
+        },
+        conversionGrid: document.getElementById('conversion-grid'),
+        footer: {
+          inrRate: document.getElementById('inr-rate-footer'),
+          lastUpdated: document.getElementById('last-updated-footer'),
+        },
+        theme: {
+          toggle: document.getElementById('theme-toggle'),
+          iconLight: document.getElementById('theme-icon-light'),
+          iconDark: document.getElementById('theme-icon-dark'),
+        }
+      };
+
+      // --- Helper Functions ---
+      const formatUsd = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formatInr = (val) => val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const sanitizeForId = (str) => str.replace(/[^a-zA-Z0-9]/g, '');
+
+      const isMarketOpen = (now) => {
+        const dayUTC = now.getUTCDay();
+        const hourUTC = now.getUTCHours();
+        if (dayUTC === 6) return false;
+        if (dayUTC === 0 && hourUTC < 22) return false;
+        if (dayUTC === 5 && hourUTC >= 21) return false;
+        if (hourUTC === 21) return false;
+        return true;
+      };
+
+      const applyPriceFlash = (element, change) => {
+        if (change === 'none' || !element) return;
+        const newClass = change === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+        const defaultClasses = ['text-slate-900', 'dark:text-white', 'text-slate-600', 'dark:text-slate-400'];
+
+        element.classList.remove(...defaultClasses, 'text-green-600', 'dark:text-green-400', 'text-red-600', 'dark:text-red-400');
+        newClass.split(' ').forEach(c => element.classList.add(c));
+
+        setTimeout(() => {
+          element.classList.remove(...newClass.split(' '));
+          if (element.id === 'price-flash-container-usd') {
+            element.classList.add('text-slate-900', 'dark:text-white');
+          } else if (element.id === 'price-inr' || element.id.startsWith('conversion-usd-') || element.id.startsWith('conversion-inr-') || element.id === 'inr-rate-footer') {
+            element.classList.add('text-slate-600', 'dark:text-slate-400');
+          }
+        }, 1000);
+      };
+
+      // --- Render Functions ---
+      function renderTheme() {
+        if (state.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          ELS.theme.iconLight.classList.add('hidden');
+          ELS.theme.iconDark.classList.remove('hidden');
+          ELS.theme.toggle.setAttribute('aria-label', 'Switch to light mode');
+        } else {
+          document.documentElement.classList.remove('dark');
+          ELS.theme.iconDark.classList.add('hidden');
+          ELS.theme.iconLight.classList.remove('hidden');
+          ELS.theme.toggle.setAttribute('aria-label', 'Switch to dark mode');
+        }
+      }
+
+      function renderMarketStatus() {
+        const marketOpen = isMarketOpen(new Date());
+        if (marketOpen) {
+          ELS.marketStatus.ping.classList.remove('hidden');
+          ELS.marketStatus.dot.classList.remove('bg-red-500');
+          ELS.marketStatus.dot.classList.add('bg-green-500');
+          ELS.marketStatus.text.classList.remove('text-red-500', 'dark:text-red-400');
+          ELS.marketStatus.text.classList.add('text-green-600', 'dark:text-green-400');
+          ELS.marketStatus.text.textContent = 'Market is Open';
+        } else {
+          ELS.marketStatus.ping.classList.add('hidden');
+          ELS.marketStatus.dot.classList.remove('bg-green-500');
+          ELS.marketStatus.dot.classList.add('bg-red-500');
+          ELS.marketStatus.text.classList.remove('text-green-600', 'dark:text-green-400');
+          ELS.marketStatus.text.classList.add('text-red-500', 'dark:text-red-400');
+          ELS.marketStatus.text.textContent = 'Market is Closed';
+        }
+      }
+
+      function renderPriceDisplay(change) {
+        if (state.xauUsdPrice !== null) {
+          ELS.priceUsd.textContent = `$${formatUsd(state.xauUsdPrice)}`;
+        }
+
+        if (state.xauUsdPrice !== null && state.usdToInrRate !== null) {
+          const xauInrPrice = state.xauUsdPrice * state.usdToInrRate;
+          ELS.priceInr.textContent = `₹${formatInr(xauInrPrice)}`;
+        }
+
+        // Icon
+        let iconHtml = '';
+        let iconColorClass = '';
+        if (change === 'up') {
+          iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75"></path></svg>`;
+          iconColorClass = 'text-green-500';
+        } else if (change === 'down') {
+          iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m0 0l-6.75-6.75M12 19.5l6.75-6.75"></path></svg>`;
+          iconColorClass = 'text-red-500';
+        }
+        ELS.priceChangeIconContainer.innerHTML = iconHtml;
+        ELS.priceChangeIconContainer.className = `hidden sm:flex items-center justify-center w-8 h-8 ${iconColorClass}`;
+
+        // Announcer for screen readers
+        if (change !== 'none' && state.xauUsdPrice !== null) {
+          ELS.ariaAnnouncer.textContent = `Price ${change} to ${formatUsd(state.xauUsdPrice)} dollars.`;
+        }
+
+        applyPriceFlash(ELS.priceFlashContainerUsd, change);
+        applyPriceFlash(ELS.priceInr, change);
+      }
+
+      function renderConversionTable(change) {
+        const TOLA_IN_GRAMS = 11.6638;
+        const CONVERSION_UNITS = [
+          { name: '1 Gram (g)', grams: 1 },
+          { name: '10 Grams', grams: 10 },
+          { name: '1 Tola', grams: TOLA_IN_GRAMS },
+          { name: '100 Grams', grams: 100 },
+          { name: '1 Kilogram (kg)', grams: 1000 },
+          { name: '1 Troy Ounce', grams: TROY_OUNCE_IN_GRAMS },
+        ];
+
+        if (state.xauUsdPrice === null || state.usdToInrRate === null) return;
+        const pricePerGramUSD = state.xauUsdPrice / TROY_OUNCE_IN_GRAMS;
+        const pricePerGramINR = pricePerGramUSD * state.usdToInrRate;
+
+        ELS.conversionGrid.innerHTML = '';
+        CONVERSION_UNITS.forEach(unit => {
+          const usdValue = pricePerGramUSD * unit.grams;
+          const inrValue = pricePerGramINR * unit.grams;
+          const unitId = sanitizeForId(unit.name);
+
+          const card = document.createElement('div');
+          card.className = "bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-lg shadow-md dark:shadow-lg border border-slate-200 dark:border-slate-700 p-4 flex flex-col items-start text-left space-y-1 transition-all duration-300 hover:scale-105 hover:shadow-lg dark:hover:shadow-xl hover:shadow-amber-500/20 dark:hover:shadow-amber-500/30 hover:border-amber-300 dark:hover:border-amber-400";
+          card.innerHTML = `
+                      <p class="font-semibold text-slate-800 dark:text-white text-md">${unit.name}</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 pb-2">${unit.grams.toFixed(4)} g</p>
+                      <p id="conversion-usd-${unitId}" class="text-md font-semibold transition-colors duration-300 text-slate-600 dark:text-slate-400">$${formatUsd(usdValue)}</p>
+                      <p id="conversion-inr-${unitId}" class="text-md font-semibold transition-colors duration-300 text-slate-600 dark:text-slate-400">₹${formatInr(inrValue)}</p>
+                  `;
+          ELS.conversionGrid.appendChild(card);
+
+          applyPriceFlash(card.querySelector(`#conversion-usd-${unitId}`), change);
+          applyPriceFlash(card.querySelector(`#conversion-inr-${unitId}`), change);
+        });
+      }
+
+      function renderPriceHistoryChart() {
+        const hasData = state.priceHistory.length > 1;
+        ELS.chart.svg.classList.toggle('hidden', !hasData);
+        ELS.chart.placeholder.classList.toggle('hidden', hasData);
+
+        if (!hasData) return;
+
+        const data = state.priceHistory;
+        const width = 300;
+        const height = 100;
+        const padding = 5;
+
+        const prices = data.map(d => d.price);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const range = max - min === 0 ? 1 : max - min;
+
+        const getPoint = (price, index) => {
+          const x = (index / (data.length - 1)) * (width - padding * 2) + padding;
+          const y = height - ((price - min) / range) * (height - padding * 2) - padding;
+          return { x, y };
+        };
+
+        const points = data.map((entry, i) => {
+          const { x, y } = getPoint(entry.price, i);
+          return `${x},${y}`;
+        }).join(' ');
+
+        const areaPoints = `${padding},${height} ${points} ${width - padding},${height}`;
+
+        ELS.chart.line.setAttribute('points', points);
+        ELS.chart.area.setAttribute('d', `M ${areaPoints}`);
+      }
+
+      function renderFooter(inrChange) {
+        if (state.usdToInrRate !== null) {
+          ELS.footer.inrRate.textContent = `USD/INR Exchange Rate: ₹${formatInr(state.usdToInrRate)}`;
+        }
+        if (state.lastUpdated !== null) {
+          ELS.footer.lastUpdated.textContent = `Last Updated: ${state.lastUpdated.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+        }
+        applyPriceFlash(ELS.footer.inrRate, inrChange);
+      }
+
+      function renderError() {
+        const errorMessages = Object.values(state.errors).filter(Boolean);
+        if (errorMessages.length === 0) {
+          ELS.errorBanner.classList.add('hidden');
+          ELS.errorBanner.textContent = '';
+          return;
+        }
+        ELS.errorBanner.classList.remove('hidden');
+        ELS.errorBanner.textContent = `${errorMessages.join(' ')} Trying again soon.`;
+      }
+
+
+      // --- Event Handlers ---
+      function handleThemeToggle() {
+        state.theme = state.theme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', state.theme);
+        renderTheme();
+      }
+
+      function handleChartMouseMove(e) {
+        if (!ELS.chart.container || state.priceHistory.length < 2 || state.usdToInrRate === null) return;
+
+        const rect = ELS.chart.svg.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+
+        const index = Math.min(
+          state.priceHistory.length - 1,
+          Math.max(0, Math.round(((mouseX / rect.width) * (state.priceHistory.length - 1))))
+        );
+
+        const entry = state.priceHistory[index];
+        const { time, price } = entry;
+        const width = 300, height = 100, padding = 5;
+        const prices = state.priceHistory.map(d => d.price);
+        const min = Math.min(...prices), max = Math.max(...prices);
+        const range = max - min === 0 ? 1 : max - min;
+
+        const getPoint = (p, idx) => {
+          const x = (idx / (state.priceHistory.length - 1)) * (width - padding * 2) + padding;
+          const y = height - ((p - min) / range) * (height - padding * 2) - padding;
+          return { x, y };
+        };
+        const { x: svgX, y: svgY } = getPoint(price, index);
+
+        ELS.chart.tooltipElements.classList.remove('hidden');
+        ELS.chart.tooltipLine.setAttribute('x1', String(svgX));
+        ELS.chart.tooltipLine.setAttribute('x2', String(svgX));
+        ELS.chart.tooltipCircle.setAttribute('cx', String(svgX));
+        ELS.chart.tooltipCircle.setAttribute('cy', String(svgY));
+
+        ELS.chart.tooltip.classList.remove('hidden');
+        ELS.chart.tooltip.style.left = `${mouseX}px`;
+        ELS.chart.tooltip.style.top = `10px`;
+        ELS.chart.tooltip.style.transform = mouseX > rect.width / 2 ? 'translateX(-110%)' : 'translateX(10%)';
+        ELS.chart.tooltipTime.textContent = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+        ELS.chart.tooltipPriceUsd.textContent = `$${formatUsd(price)}`;
+        ELS.chart.tooltipPriceInr.textContent = `₹${formatInr(price * state.usdToInrRate)}`;
+      }
+
+      function handleChartMouseLeave() {
+        ELS.chart.tooltip.classList.add('hidden');
+        ELS.chart.tooltipElements.classList.add('hidden');
+      }
+
+      // --- Main Fetch Logic ---
+      async function fetchPrices() {
+        const [currencyResult, goldResult] = await Promise.allSettled([
+          fetch(CURRENCY_API_URL, { cache: 'no-cache' }),
+          fetch(GOLD_API_URL, { cache: 'no-cache' })
+        ]);
+
+        let hasCriticalError = false;
+        let priceChange = 'none';
+        let inrRateChange = 'none';
+
+        // Process Currency Data
+        if (currencyResult.status === 'fulfilled' && currencyResult.value.ok) {
+          try {
+            const currencyData = await currencyResult.value.json();
+            const newInrRate = currencyData.rates?.INR;
+            if (!newInrRate) throw new Error('Could not parse currency rate from API response.');
+
+            if (state.usdToInrRate !== null) {
+              if (newInrRate > state.usdToInrRate) inrRateChange = 'up';
+              else if (newInrRate < state.usdToInrRate) inrRateChange = 'down';
+            }
+            state.usdToInrRate = newInrRate;
+            state.errors.currency = null;
+          } catch (err) {
+            state.errors.currency = 'Failed to process currency data.';
+          }
+        } else {
+          state.errors.currency = 'Failed to fetch currency rate.';
+          if (state.usdToInrRate === null) hasCriticalError = true;
+        }
+
+        // Process Gold Data
+        if (goldResult.status === 'fulfilled' && goldResult.value.ok) {
+          try {
+            const goldData = await goldResult.value.json();
+            const newXauPrice = goldData.items?.[0]?.xauPrice;
+            if (!newXauPrice) throw new Error('Could not parse gold price from API response.');
+
+            if (state.xauUsdPrice !== null) {
+              if (newXauPrice > state.xauUsdPrice) priceChange = 'up';
+              else if (newXauPrice < state.xauUsdPrice) priceChange = 'down';
+            }
+            state.xauUsdPrice = newXauPrice;
+            state.errors.gold = null;
+
+            // Add to history
+            state.priceHistory.push({ time: new Date(), price: newXauPrice });
+            if (state.priceHistory.length > 30) {
+              state.priceHistory.shift(); // Keep only last 30
+            }
+
+          } catch (err) {
+            state.errors.gold = 'Failed to process gold price data.';
+          }
+        } else {
+          state.errors.gold = 'Failed to fetch gold price.';
+          if (state.xauUsdPrice === null) hasCriticalError = true;
+        }
+
+        // Handle initial load failure
+        if (hasCriticalError) {
+          ELS.skeletonLoader.style.display = 'none';
+          ELS.appContent.classList.remove('hidden');
+          document.querySelector('#app-content main').classList.add('hidden');
+          ELS.initialError.classList.remove('hidden');
+          const initialErrorP = ELS.initialError.querySelector('p');
+          if (initialErrorP) {
+            initialErrorP.textContent = `Could not fetch initial prices: ${state.errors.gold || ''} ${state.errors.currency || ''}. Please check your internet connection and try again.`;
+          }
+          return; // Stop further rendering
+        }
+
+        // If we have any data, show the app
+        if (state.xauUsdPrice !== null || state.usdToInrRate !== null) {
+          state.lastUpdated = new Date();
+          if (ELS.skeletonLoader.style.display !== 'none' || !ELS.initialError.classList.contains('hidden')) {
+            ELS.skeletonLoader.style.display = 'none';
+            ELS.appContent.classList.remove('hidden');
+            document.querySelector('#app-content main').classList.remove('hidden');
+            ELS.initialError.classList.add('hidden');
+          }
+        }
+
+        // Render all components with new data
+        renderPriceDisplay(priceChange);
+        renderConversionTable(priceChange);
+        renderPriceHistoryChart();
+        renderFooter(inrRateChange);
+        renderError();
+      }
+
+      // --- Initialization ---
+      async function init() {
+        renderTheme();
+        renderMarketStatus();
+        renderPriceHistoryChart();
+
+        ELS.theme.toggle.addEventListener('click', handleThemeToggle);
+        ELS.chart.container.addEventListener('mousemove', handleChartMouseMove);
+        ELS.chart.container.addEventListener('mouseleave', handleChartMouseLeave);
+
+        // Fetch prices twice in quick succession on initial load to prime the chart.
+        // This avoids the 30-second wait for the second data point to appear.
+        await fetchPrices();
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Small delay for a potential price change
+        await fetchPrices();
+
+        setInterval(fetchPrices, API_FETCH_INTERVAL_MS);
+        setInterval(renderMarketStatus, 60000);
+      }
+
+      init();
+    });
+  </script>
+</body>
+
+</html>
